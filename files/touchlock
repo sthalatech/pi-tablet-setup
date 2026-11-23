@@ -1,0 +1,46 @@
+#!/bin/bash
+# touchlock launcher: single instance, crash-restart, optional -f (return once locked).
+#   touchlock [-f] [--test]
+# Any other args (e.g. swaylock's -p) are ignored so this can stand in for swaylock.
+
+for LIB in "$HOME/.local/lib" "$HOME/.local/lib/aarch64-linux-gnu"; do
+  [ -d "$LIB/girepository-1.0" ] || continue
+  export LD_LIBRARY_PATH="$LIB${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+  export GI_TYPELIB_PATH="$LIB/girepository-1.0${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}"
+done
+APP="$HOME/.local/share/touchlock/touchlock.py"
+RUN="${XDG_RUNTIME_DIR:-/tmp}"
+
+daemon=0; test=""
+for a in "$@"; do
+  case "$a" in
+    -f|--daemonize) daemon=1 ;;
+    --test) test="--test" ;;
+  esac
+done
+
+if [ -n "$test" ]; then exec python3 "$APP" --test; fi
+
+exec 9>"$RUN/touchlock.lock"
+flock -n 9 || exit 0          # already locked
+
+supervise() {
+  # If the UI crashes the compositor keeps the session locked; start it again
+  # so there is always a way to unlock.
+  for _ in $(seq 1 20); do
+    python3 "$APP" && return 0
+    sleep 1
+  done
+  return 1
+}
+
+if [ "$daemon" = 1 ]; then
+  fifo="$RUN/touchlock.ready.$$"
+  rm -f "$fifo"; mkfifo "$fifo"
+  TOUCHLOCK_READY="$fifo" supervise &
+  timeout 5 head -c1 "$fifo" >/dev/null 2>&1
+  rm -f "$fifo"
+  exit 0
+fi
+
+supervise
