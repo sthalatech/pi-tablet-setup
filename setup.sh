@@ -124,6 +124,16 @@ fi
 log "4/8 touchlock lock screen"
 put_user_file "$HOME_DIR/.local/share/touchlock/touchlock.py" < "$HERE/files/touchlock.py"
 MODE=755 put_user_file "$HOME_DIR/.local/bin/touchlock" < "$HERE/files/touchlock"
+MODE=755 put_user_file "$HOME_DIR/.local/bin/rotate-screen" < "$HERE/files/rotate-screen"
+put_user_file "$HOME_DIR/.local/share/applications/rotate-screen.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=Rotate Screen
+Comment=Rotate the display 90° clockwise
+Exec=rotate-screen
+Icon=object-rotate-right
+Categories=Settings;DesktopSettings;
+EOF
 MODE=755 put_user_file "$HOME_DIR/.local/bin/swaylock" <<'EOF'
 #!/bin/sh
 # Stand-in so the panel Lock button uses touchlock. Real one: /usr/bin/swaylock
@@ -147,6 +157,7 @@ RC="$LABWC/rc.xml"
 as_user python3 - "$RC" "$TOUCH_NAME" "$DSI_OUT" "$HOME_DIR/.local/bin/touchlock" "$STAMP" <<'PY'
 import os, re, shutil, sys
 rc, touch, out, lock, stamp = sys.argv[1:]
+rot = os.path.join(os.path.dirname(lock), "rotate-screen")
 if os.path.exists(rc):
     s = open(rc).read()
 else:
@@ -155,7 +166,7 @@ else:
 orig = s
 s = re.sub(r'[ \t]*<touch\b[^>]*/>\n?', '', s)
 s = re.sub(r'[ \t]*<!-- pi-tablet-setup -->.*?<!-- /pi-tablet-setup -->\n?', '', s, flags=re.S)
-s = re.sub(r'[ \t]*<keybind key="[^"]*"><action name="Execute" command="[^"]*touchlock[^"]*" ?/></keybind>\n?', '', s)
+s = re.sub(r'[ \t]*<keybind key="[^"]*"><action name="Execute" command="[^"]*(touchlock|rotate-screen)[^"]*" ?/></keybind>\n?', '', s)
 s = re.sub(r'[ \t]*<keyboard>\s*</keyboard>\n?', '', s)
 name = f' deviceName="{touch}"' if touch else ''
 block = (f'  <!-- pi-tablet-setup -->\n'
@@ -163,6 +174,8 @@ block = (f'  <!-- pi-tablet-setup -->\n'
          f'  <keyboard>\n'
          f'    <keybind key="C-A-l"><action name="Execute" command="{lock} -f" /></keybind>\n'
          f'    <keybind key="W-l"><action name="Execute" command="{lock} -f" /></keybind>\n'
+         f'    <keybind key="W-r"><action name="Execute" command="{rot}" /></keybind>\n'
+         f'    <keybind key="C-A-r"><action name="Execute" command="{rot}" /></keybind>\n'
          f'  </keyboard>\n'
          f'  <!-- /pi-tablet-setup -->\n')
 close = re.search(r'</(openbox_config|labwc_config)>', s)

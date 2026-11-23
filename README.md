@@ -9,6 +9,7 @@ Turns a Raspberry Pi 5 with a DSI touch panel into something you can actually us
 - **Chromium** opens the on-screen keyboard when you tap a text field, and gets touch-sized tabs, swipe back/forward and pull-to-refresh.
 - **Display scale 1.5**, so text and icons aren't tiny.
 - **Lock shortcuts** Ctrl+Alt+L and Super+L. The panel's Lock button also uses touchlock.
+- **Screen rotation** with Super+R or Ctrl+Alt+R, or "Rotate Screen" in the menu. Each press turns it 90° clockwise, touch follows, and it's remembered after a reboot. From a terminal: `rotate-screen ccw`, `rotate-screen normal`, `rotate-screen status`.
 
 ## Install
 
