@@ -134,6 +134,27 @@ Exec=rotate-screen
 Icon=object-rotate-right
 Categories=Settings;DesktopSettings;
 EOF
+PANEL="$HOME_DIR/.config/wf-panel-pi/wf-panel-pi.ini"
+as_user python3 - "$PANEL" <<'PY'
+import os, re, sys
+p = sys.argv[1]
+s = open(p).read() if os.path.exists(p) else "[panel]\n"
+m = re.search(r'^launchers=(.*)$', s, re.M)
+if m:
+    items = m.group(1).split()
+else:
+    sysini = "/etc/xdg/wf-panel-pi/wf-panel-pi.ini"
+    sm = re.search(r'^launchers=(.*)$', open(sysini).read(), re.M) if os.path.exists(sysini) else None
+    items = sm.group(1).split() if sm else ["x-www-browser", "pcmanfm", "x-terminal-emulator"]
+if "rotate-screen" in items:
+    print(f"   unchanged: {p}")
+else:
+    line = "launchers=" + " ".join(items + ["rotate-screen"])
+    s = s.replace(m.group(0), line) if m else re.sub(r'^\[panel\]\n', "[panel]\n" + line + "\n", s, count=1, flags=re.M)
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    open(p, "w").write(s)
+    print(f"   wrote: {p} (taskbar rotate button)")
+PY
 MODE=755 put_user_file "$HOME_DIR/.local/bin/swaylock" <<'EOF'
 #!/bin/sh
 # Stand-in so the panel Lock button uses touchlock. Real one: /usr/bin/swaylock
