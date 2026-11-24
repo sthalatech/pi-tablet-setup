@@ -1,5 +1,5 @@
 #!/bin/bash
-# rotate-screen - rotate the touch panel and keep touch input lined up.
+# rotate-screen - rotate the touch panel (touch follows automatically).
 #
 #   rotate-screen            rotate 90° clockwise from where it is now
 #   rotate-screen ccw        rotate 90° counter-clockwise
@@ -44,29 +44,15 @@ case "${1:-cw}" in
   *) echo "rotate-screen: unknown option '$1' (try --help)" >&2; exit 2 ;;
 esac
 
-# Touch panels report raw coordinates, so tell libinput how to turn them.
-case "$new" in
-  normal) matrix="1 0 0 0 1 0" ;;
-  90)     matrix="0 1 0 -1 0 1" ;;
-  180)    matrix="-1 0 1 0 -1 1" ;;
-  270)    matrix="0 -1 1 1 0 0" ;;
-esac
-TOUCH="$(awk '/^N: Name=/{n=$0} /^B: ABS=/{ if (n ~ /ili|touch|ft5|goodix|edt|Touch/) {sub(/^N: Name="/,"",n); sub(/"$/,"",n); print n; exit} }' /proc/bus/input/devices)"
-
 wlr-randr --output "$OUT" --transform "$new"
 
-if [ -n "$TOUCH" ] && [ -f "$RC" ]; then
-  python3 - "$RC" "$TOUCH" "$matrix" <<'PY'
+# labwc rotates touch along with the output (touch is mapped to it in rc.xml),
+# so nothing to do for touch. Drop the calibration block older versions wrote.
+if [ -f "$RC" ] && grep -q '<!-- rotate-screen -->' "$RC"; then
+  python3 - "$RC" <<'PY'
 import re, sys
-rc, touch, matrix = sys.argv[1:]
-s = open(rc).read()
-s = re.sub(r'[ \t]*<!-- rotate-screen -->.*?<!-- /rotate-screen -->\n?', '', s, flags=re.S)
-block = (f'  <!-- rotate-screen -->\n  <libinput>\n    <device category="{touch}">\n'
-         f'      <calibrationMatrix>{matrix}</calibrationMatrix>\n    </device>\n  </libinput>\n'
-         f'  <!-- /rotate-screen -->\n')
-m = re.search(r'</(openbox_config|labwc_config)>', s)
-if m:
-    open(rc, "w").write(s[:m.start()] + block + s[m.start():])
+s = open(sys.argv[1]).read()
+open(sys.argv[1], "w").write(re.sub(r'[ \t]*<!-- rotate-screen -->.*?<!-- /rotate-screen -->\n?', '', s, flags=re.S))
 PY
   pkill -HUP -u "$(id -u)" -x labwc || true
 fi
