@@ -8,6 +8,7 @@ Turns a Raspberry Pi 5 with a DSI touch panel into something you can actually us
 - **A lock screen you can use with your fingers.** The stock swaylock hides the on-screen keyboard while locked and gives no feedback. `touchlock` replaces it with a clock, a built-in keyboard and clear messages (checking, wrong password, unlocked). It's a proper Wayland session lock and checks your normal login password.
 - **Chromium** opens the on-screen keyboard when you tap a text field, and gets touch-sized tabs, swipe back/forward and pull-to-refresh.
 - **Display scale 1.5**, so text and icons aren't tiny.
+- **Locked at boot.** The Pi logs in automatically, so touchlock locks the screen as soon as the desktop starts.
 - **Lock shortcuts** Ctrl+Alt+L and Super+L. The panel's Lock button also uses touchlock.
 - **Screen rotation** from the rotate button in the taskbar, Super+R / Ctrl+Alt+R, or "Rotate Screen" in the menu. Each press turns it 90° clockwise, touch follows, and it's remembered after a reboot. From a terminal: `rotate-screen ccw`, `rotate-screen normal`, `rotate-screen status`.
 

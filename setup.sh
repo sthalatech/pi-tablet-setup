@@ -238,6 +238,8 @@ swayidle -w \\
   timeout {off_after} 'wlopm --off \\*' \\
   resume 'wlopm --on \\*' \\
   before-sleep "$LOCKCMD" &
+# autologin skips the password, so lock straight away at boot
+$LOCKCMD &
 # /pi-tablet-setup
 '''
 head, _, rest = body.partition("\n")
